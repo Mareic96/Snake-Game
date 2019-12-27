@@ -1,106 +1,145 @@
 #include <iostream>
-#include <conio.h>
 #include <cstdlib>
+#include <ctime>
+#include <conio.h>//Allows us to use keyboard inputs to control the snake;
+#include <Windows.h>
 using namespace std;
 bool gameover;
+int snakeX, snakeY, fruitX, fruitY, score;
+int nTails;
+int tailX[100], tailY[100];
 const int width = 20;
 const int height = 20;
-int x, y, fruitX, fruitY, score;// variables for the head positon (x and y) and fruit;
-enum edirection {Stop = 0, Left, Right, Up, Down};
-edirection dir;
-void setup() {
-	gameover = false;
-	dir = Stop;
-	x = width / 2;
-	y = height / 2;
-	fruitX = rand() % width;
-	fruitY =  rand() % height;
-	score = 0;
-}
+enum direction{Stop = 0, Right, Left, up, down};
+direction dir;
 
-void draw() {
-	system("cls");//clear command screen;
-	for (int i = 0; i < width + 2; i++) {
-		cout << "#";
-	}// Displays the top wall of the map;
+void setup(){
+	srand(time(0));// use srand(time()) because my normal rand() function doesn't work very well;
+	gameover = false;
+	snakeX = width / 2;
+	snakeY = height / 2;
+	fruitX = rand() % width;
+	fruitY = rand() % height;
+	dir = Stop;
+	score = 0;
+}// How the game starts in when you start the application;
+
+void draw(){
+	system("cls");
+	for (int x = 0; x < width + 2; x++) {
+		cout << 'x';
+	}
 	cout << endl;
 
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			if (j == 0) {
-				cout << "#";
-			}
-			if (i == y && j == x) {
-				cout << "O";
-			}
-			else if (i == fruitX && j == fruitY) {
-				cout << "F";
-			}
-			else
-				cout << " ";
-			if (j == width - 1)// This is just the end of the width or the right side of the wall
-				cout << "#";
+
+	for (int i = 0; i < height; i++) {//row;
+		for (int j = 0; j < width; j++) {//column;
+			if (j == 0)//left column;
+				cout << 'x';
+			if (i == snakeY && j == snakeX)
+				cout << 'O';
+			else if (i == fruitY && j == fruitX)
+				cout << 'F';
+			else {
+				bool print = false;
+				for (int k = 0; k < nTails; k++) {
+					if (tailX[k] == j && tailY[k] == i) {
+						cout << 'o';
+						print = 'true';
+					}
+				}
+				if (!print)
+					cout << " ";
+			}	
+			
+			if (j == width - 1)
+				cout << 'x';
 		}
 		cout << endl;
 	}
-
-	for (int i = 0; i < width + 2; i++) {
-		cout << "#";
-	}//Displays the bottom wall;
+	for (int y = 0; y < width + 2; y++)
+		cout << 'x';
 	cout << endl;
-}
+	cout << "Score: " << score;
+}// How you see the arena, snake, fruit and other stuff;
 
-void input() {
+void controls(){
 	if (_kbhit()) {
-		switch (_getch()) {
+		switch (_getch())
+		{
+		case 'w':
+			dir = up;
+			break;
+		case 's':
+			dir = down;
+			break;
 		case 'a':
 			dir = Left;
 			break;
 		case 'd':
 			dir = Right;
 			break;
-		case 's':
-			dir = Down;
-			break;
-		case 'w':
-			dir = Up;
-			break;
 		case 'x':
 			gameover = true;
 			break;
 		}
 	}
-}
-//_kbhit return boolean; if the keyboard is pressed then it will return positive number and if nothing is pressed it will return 0;
-void logic() {
-	switch (dir) {
-	case Left:
-		x--;
-		break;
+}// How user controls the game;
+
+void logic(){
+	srand(time(0));
+	int prevX = tailX[0];
+	int prevY = tailY[0];
+	int prev2X, prev2Y;
+	tailX[0] = snakeX;
+	tailY[0] = snakeY;
+	for (int i = 1; i < nTails; i++) {
+		prev2X = tailX[i];
+		prev2Y = tailY[i];
+		tailX[i] = prevX;
+		tailY[i] = prevY;
+		prevX = prev2X;
+		prevY = prev2Y;
+	}
+	switch (dir)
+	{
 	case Right:
-		x++;
+		snakeX++;
 		break;
-	case Up:
-		y--;
+	case Left:
+		snakeX--;
 		break;
-	case Down:
-		y++;
+	case up:
+		snakeY--;
+		break;
+	case down:
+		snakeY++;
 		break;
 	}
-	if (x > width || x < 0 || y > height || y < 0)
+	if (snakeX < 0 || snakeX == width || snakeY < 0 || snakeY == height) {
 		gameover = true;
-	if (x == fruitX && y == fruitY) {
-		score += 10;
+	}
+	for (int i = 0; i < nTails; i++) {
+		if (tailX[i] == snakeX && tailY[i] == snakeY) {
+			cout << "You touched the tail";
+			gameover = true;
+		}
+	}
+	if (snakeX == fruitX && snakeY == fruitY) {
 		fruitX = rand() % width;
 		fruitY = rand() % height;
+		nTails++;
+		score += 10;
 	}
-}
+} // How game increases snakes size and what happens when the snake eats it
 
-int main() {
+int main(){
 	setup();
 	while (!gameover) {
 		draw();
-		input();
+		controls();
 		logic();
+		Sleep(20);
 	}
+	return 0;
 }
